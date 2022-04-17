@@ -2,9 +2,12 @@ import cors from 'cors';
 import express, { json, NextFunction, request, Request, Response } from 'express';
 import 'express-async-errors';
 
+import router from './routers/index.js';
+
 const app = express();
 app.use(cors());
 app.use(json());
+app.use(router);
 app.use((error, req: Request, res: Response, next: NextFunction) => {
     console.log(error);
     if(error.response) {
