@@ -19,7 +19,7 @@ export async function generateCardData(employeeId: number, type: TransactionType
   // console.log(number);
   // console.log(cardholderName);
   // console.log(expirationDate)
-  // console.log(securityCode);
+   console.log(securityCode);
 
   const cardData = {
     employeeId,
@@ -33,7 +33,7 @@ export async function generateCardData(employeeId: number, type: TransactionType
     type
   }
 
-  //await cardRepository.insert(cardData);
+  await cardRepository.insert(cardData);
   return cardData;
 }
 
@@ -73,7 +73,7 @@ function formatName(name: string) {
 }
 
 function generateExpirationDate() {
-  return dayjs().add(5, 'year').toString()
+  return dayjs().add(5, 'year').format('MM/YY').toString()
 }
 
 function generateSecurityCode() {
