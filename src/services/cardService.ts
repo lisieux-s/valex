@@ -92,18 +92,34 @@ export async function updateCard(
 
 async function checkCardAndSecurityCode(id: number, securityCode: string) {
   const result = await cardRepository.findById(id);
-  console.log(result)
-  console.log(result.securityCode)
   
   if (
     !result 
-    //|| dayjs().diff(result.expirationDate, 'years') > 5 yeah thats not workin 
+    || isExpired(result.expirationDate)
     || result.password 
     || !bcrypt.compareSync(securityCode.toString(), result.securityCode)
   ) {
     throw { type: 'UNAUTHORIZED' };
   }
+}
 
+function isExpired(expirationDate: string) {
+  const currentDate = dayjs().format('MM/YY')
+  const currentMonth = parseInt(currentDate.substring(0,1));
+  const currentYear = parseInt(currentDate.substring(3,4));
+
+  const expirationMonth = parseInt(expirationDate.substring(0,1));
+  const expirationYear = parseInt(expirationDate.substring(3,4));
+
+  if(currentYear > expirationYear) {
+    return true;
+  } else if(currentYear === expirationYear) {
+    if(currentMonth > expirationMonth) {
+      return true;
+    } else return false;
+  } else {
+    return false;
+  }
 }
 
 export async function getBalance(cardId: number) {
