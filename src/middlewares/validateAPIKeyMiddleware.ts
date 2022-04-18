@@ -3,20 +3,27 @@ import { NextFunction, Request, Response } from "express";
 import * as companyRepository from '../repositories/companyRepository.js'
 
 export async function validateAPIKeyMiddleware(
-    error, 
     req: Request,
     res: Response,
     next: NextFunction
 ) {
-    const APIKey = req.headers['x-api-key'][0];
+    const APIKey = req.headers['x-api-key']?.toString();
+    const id = req.headers.id?.toString();
 
-    await isKeyValid(APIKey)
-  
+    if(!APIKey) {
+        throw { type: 'UNAUTHORIZED' }
+    }
+
+    await isKeyValid(APIKey, id)
     next();
+  
 }
 
-async function isKeyValid(APIKey: string) {
-    if(!await companyRepository.findByApiKey(APIKey)) {
+async function isKeyValid(APIKey: string, companyId: string) {
+    const result = await companyRepository.findByApiKey(APIKey);
+    if(!result) {
+        throw { type: 'UNAUTHORIZED' }
+    } else if(result.id !== parseInt(companyId)) {
         throw { type: 'UNAUTHORIZED' }
     }
 }
