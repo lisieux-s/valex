@@ -9,7 +9,7 @@ export async function recharge(cardId: number, amount: number) {
     if(amount <= 0) {
         throw { type: 'UNPROCESSABLE_ENTITY' }
     }
-    checkCard(cardId);
+    await checkCard(cardId);
 
     await rechargeRepository.insert({
         cardId,

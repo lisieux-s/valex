@@ -95,9 +95,11 @@ export async function updateCard(
 
 async function checkCardAndSecurityCode(id: number, securityCode: string) {
   const result = await cardRepository.findById(id);
+  if(!result) {
+    throw { type: 'NOT_FOUND' }
+  }
 
   if (
-    !result ||
     isExpired(result.expirationDate) ||
     result.password ||
     !bcrypt.compareSync(securityCode.toString(), result.securityCode)
@@ -159,6 +161,8 @@ export async function toggleBlockCard(id: number, password: string, block: boole
   } else if(!bcrypt.compareSync(password.toString(), result.password)) {
     throw { type: 'UNAUTHORIZED' }
   }
+
+  await cardRepository.update(id, { isBlocked: !result.isBlocked });
 }
 
 async function getCardById(id: number) {

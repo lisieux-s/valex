@@ -36,9 +36,13 @@ export async function getBalance(req: Request, res: Response) {
 }
 
 export async function blockCard(req: Request, res: Response) {
-
+    const { id, password } = req.body;
+    await cardService.toggleBlockCard(id, password, true);
+    res.sendStatus(200);
 }
 
 export async function unblockCard(req: Request, res: Response) {
-
+    const { id, password } = req.body;
+    await cardService.toggleBlockCard(id, password, false);
+    res.sendStatus(200);
 }

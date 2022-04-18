@@ -14,7 +14,7 @@ cardRouter.post(
 cardRouter.put('/activate-card', cardController.updateCard);
 cardRouter.get('/balance', cardController.getBalance);
 
-cardRouter.post('/block-card', cardController.blockCard);
-cardRouter.post('/unblock-card', cardController.unblockCard)
+cardRouter.post('/block', cardController.blockCard);
+cardRouter.post('/unblock', cardController.unblockCard)
 
 export default cardRouter;

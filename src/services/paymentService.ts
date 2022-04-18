@@ -13,8 +13,13 @@ export async function pay(
   businessId: number,
   amount: number
 ) {
+
+  if(!cardId || !password || !businessId || !amount) {
+    throw { type: 'UNPROCESSABLE_ENTITY' }
+  }
+
   const cardType = await checkCard(cardId, password);
-  checkBusiness(businessId, cardType);
+  await checkBusiness(businessId, cardType);
 
   const balance = (await cardService.getBalance(cardId)).balance;
   if (balance >= amount) {
@@ -23,6 +28,8 @@ export async function pay(
       businessId,
       amount,
     });
+  } else {
+    throw { type: 'UNAUTHORIZED' }
   }
 
   return;
@@ -36,7 +43,10 @@ async function checkCard(cardId: number, password: string) {
     throw { type: 'UNAUTHORIZED' };
   } else if (!bcrypt.compareSync(password, result.password)) {
     throw { type: 'UNAUTHORIZED' };
+  } else if(result.isBlocked) {
+    throw { type: 'UNAUTHORIZED' }
   }
+
   return result.type;
 }
 
@@ -48,5 +58,3 @@ async function checkBusiness(businessId: number, cardType: string) {
     throw { type: 'UNAUTHORIZED' };
   }
 }
-
-async function checkBalance(cardId: number, amount: number) {}
