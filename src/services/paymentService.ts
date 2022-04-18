@@ -32,7 +32,7 @@ async function checkCard(cardId: number, password: string) {
   const result = await cardRepository.findById(cardId);
   if (!result) {
     throw { type: 'NOT_FOUND' };
-  } else if (dayjs().diff(result.expirationDate, 'years') > 5) {
+  } else if (cardService.isExpired(result.expirationDate)) {
     throw { type: 'UNAUTHORIZED' };
   } else if (!bcrypt.compareSync(password, result.password)) {
     throw { type: 'UNAUTHORIZED' };
