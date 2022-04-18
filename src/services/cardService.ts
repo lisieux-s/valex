@@ -13,7 +13,7 @@ export async function generateCardData(
   type: TransactionTypes
 ) {
   const name = await findEmployee(employeeId);
-  checkUniqueCard(type, employeeId);
+  await checkUniqueCard(type, employeeId);
 
   const number = await generateCardNumber();
   const cardholderName = formatName(name);
@@ -51,6 +51,7 @@ async function checkUniqueCard(type: TransactionTypes, id: number) {
   if (await cardRepository.findByTypeAndEmployeeId(type, id)) {
     throw { type: 'CONFLICT' };
   }
+  return;
 }
 
 async function generateCardNumber() {
@@ -75,7 +76,6 @@ function formatName(name: string) {
 
 async function checkCardNumber(cardNumber: string) {
   const result = await cardRepository.find();
-  console.log(result);
   return result.find((card) => card.number === cardNumber);
 }
 
@@ -84,7 +84,10 @@ export async function updateCard(
   securityCode: string,
   password: string
 ) {
-  console.log(securityCode)
+  if (password.length !== 4) {
+    throw { type: 'UNPROCESSABLE_ENTITY' };
+  }
+
   const passwordHash = bcrypt.hashSync(password, 10);
   await checkCardAndSecurityCode(id, securityCode);
   await cardRepository.update(id, { securityCode, password: passwordHash });
@@ -92,29 +95,29 @@ export async function updateCard(
 
 async function checkCardAndSecurityCode(id: number, securityCode: string) {
   const result = await cardRepository.findById(id);
-  
+
   if (
-    !result 
-    || isExpired(result.expirationDate)
-    || result.password 
-    || !bcrypt.compareSync(securityCode.toString(), result.securityCode)
+    !result ||
+    isExpired(result.expirationDate) ||
+    result.password ||
+    !bcrypt.compareSync(securityCode.toString(), result.securityCode)
   ) {
     throw { type: 'UNAUTHORIZED' };
   }
 }
 
-function isExpired(expirationDate: string) {
-  const currentDate = dayjs().format('MM/YY')
-  const currentMonth = parseInt(currentDate.substring(0,1));
-  const currentYear = parseInt(currentDate.substring(3,4));
+export function isExpired(expirationDate: string) {
+  const currentDate = dayjs().format('MM/YY');
+  const currentMonth = parseInt(currentDate.substring(0, 1));
+  const currentYear = parseInt(currentDate.substring(3, 4));
 
-  const expirationMonth = parseInt(expirationDate.substring(0,1));
-  const expirationYear = parseInt(expirationDate.substring(3,4));
+  const expirationMonth = parseInt(expirationDate.substring(0, 1));
+  const expirationYear = parseInt(expirationDate.substring(3, 4));
 
-  if(currentYear > expirationYear) {
+  if (currentYear > expirationYear) {
     return true;
-  } else if(currentYear === expirationYear) {
-    if(currentMonth > expirationMonth) {
+  } else if (currentYear === expirationYear) {
+    if (currentMonth > expirationMonth) {
       return true;
     } else return false;
   } else {
@@ -125,21 +128,43 @@ function isExpired(expirationDate: string) {
 export async function getBalance(cardId: number) {
   const transactionsResult = await paymentRepository.findByCardId(cardId);
   const rechargesResult = await rechargeRepository.findByCardId(cardId);
-  
+
   const transactions = sumByKey(transactionsResult, 'amount');
   const recharges = sumByKey(rechargesResult, 'amount');
 
   const balance = recharges - transactions;
-  
-  return({
+
+  return {
     balance,
     transactions,
-    recharges
-  })
+    recharges,
+  };
 }
 
 function sumByKey(object, key: string) {
   const values = [];
   object.map((item) => values.push(item.amount));
-  return values.reduce((previous: number, current: number) => previous + current, 0)
+  return values.reduce(
+    (previous: number, current: number) => previous + current,
+    0
+  );
+}
+
+export async function toggleBlockCard(id: number, password: string, block: boolean) {
+  const result = await getCardById(id);
+  isExpired(result.expirationDate);
+
+  if (result.isBlocked === block) {
+    throw { type: 'UNPROCESSABLE_ENTITY' };
+  } else if(!bcrypt.compareSync(password.toString(), result.password)) {
+    throw { type: 'UNAUTHORIZED' }
+  }
+}
+
+async function getCardById(id: number) {
+  const result = await cardRepository.findById(id);
+  if(!result) {
+    throw { type: 'NOT_FOUND' }
+  }
+  return result;
 }
